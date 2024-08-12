@@ -1,18 +1,16 @@
-import { withIronSessionApiRoute, withIronSessionSsr } from "iron-session/next";
-import { NextApiHandler } from "next";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export const sessionOptions = {
-  password: process.env.SECRET_COOKIE_PASSWORD as string,
-  cookieName: "myapp_cookiename",
-  cookieOptions: {
-    secure: process.env.NODE_ENV === "production",
-  },
+export function middleware(req: NextRequest) {
+  const sessionToken = req.cookies.get('session-token');
+
+  if (!sessionToken) {
+    return NextResponse.redirect(new URL('/log-in', req.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: '/',
 };
-
-export function withSessionRoute(handler: NextApiHandler) {
-  return withIronSessionApiRoute(handler, sessionOptions);
-}
-
-export function withSessionSsr(handler: any) {
-  return withIronSessionSsr(handler, sessionOptions);
-}

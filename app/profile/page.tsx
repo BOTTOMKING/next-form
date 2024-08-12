@@ -1,5 +1,4 @@
 import { withSessionSsr } from "@/middleware";
-import prisma from "@/lib/prisma";
 
 export default function Profile({ user }: { user: any }) {
   return (
@@ -11,7 +10,6 @@ export default function Profile({ user }: { user: any }) {
   );
 }
 
-// You can wrap the server-side code to check for the session using `getServerSideProps`
 export const getServerSideProps = withSessionSsr(async ({ req }) => {
   const user = req.session.user;
 
