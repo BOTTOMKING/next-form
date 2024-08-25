@@ -1,38 +1,50 @@
-import { useState, useEffect } from 'react';
+// app/search/page.tsx
+"use client"; // Add this line at the top
 
-export default function SearchPage() {
-  const [keyword, setKeyword] = useState('');
-  const [tweets, setTweets] = useState<any[]>([]);
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
-  useEffect(() => {
-    const fetchTweets = async () => {
-      const response = await fetch(`/api/tweets?keyword=${keyword}`);
-      const data = await response.json();
-      setTweets(data);
-    };
+const schema = z.object({
+  keyword: z.string().min(1, "Keyword cannot be empty"),
+});
 
-    if (keyword) {
-      fetchTweets();
+type FormData = z.infer<typeof schema>;
+
+const SearchPage: React.FC = () => {
+  const { register, handleSubmit, formState } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
+  const [results, setResults] = useState<any[]>([]);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const onSubmit = async (data: FormData) => {
+    try {
+      const response = await fetch(`/api/tweets/search?keyword=${data.keyword}`);
+      const result = await response.json();
+      setResults(result);
+      setStatus("Search completed.");
+    } catch (error) {
+      setStatus("Error during search.");
     }
-  }, [keyword]);
+  };
 
   return (
-    <div className="container mx-auto max-w-md py-12">
-      <h1 className="text-2xl font-bold">Search Tweets</h1>
-      <input
-        type="text"
-        placeholder="Search by keyword"
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-        className="block w-full mb-4 p-2 border border-gray-300 rounded"
-      />
-      <div>
-        {tweets.map((tweet) => (
-          <div key={tweet.id} className="p-4 border border-gray-200 rounded mb-2">
-            <p>{tweet.tweet}</p>
-          </div>
+    <div>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <input {...register('keyword')} placeholder="Search tweets..." />
+        <button type="submit">Search</button>
+        {formState.isSubmitting && <p>Searching...</p>}
+        {status && <p>{status}</p>}
+      </form>
+      <ul>
+        {results.map(result => (
+          <li key={result.id}>{result.tweet}</li>
         ))}
-      </div>
+      </ul>
     </div>
   );
-}
+};
+
+export default SearchPage;

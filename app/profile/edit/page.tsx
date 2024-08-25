@@ -1,79 +1,59 @@
+// app/profile/edit/page.tsx
+"use client"; // Add this line at the top
+
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
-import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
-import bcrypt from 'bcrypt';
 
-const updateProfileSchema = z.object({
+const schema = z.object({
   username: z.string().min(5, "Username must be at least 5 characters long"),
-  email: z.string().email().endsWith('@zod.com', "Email must end with @zod.com"),
+  email: z.string().email("Invalid email address").endsWith("@zod.com", "Email must be from @zod.com"),
+  password: z.string().min(10, "Password must be at least 10 characters long").regex(/\d/, "Password must contain at least one number"),
   bio: z.string().optional(),
-  password: z.string().min(10, "Password must be at least 10 characters long").regex(/[0-9]/, "Password must include at least one number"),
 });
 
-type UpdateProfileFormData = z.infer<typeof updateProfileSchema>;
+type FormData = z.infer<typeof schema>;
 
-export default function EditProfilePage() {
-  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
-  const { register, handleSubmit, formState: { errors } } = useForm<UpdateProfileFormData>({
-    resolver: zodResolver(updateProfileSchema),
+const ProfileEdit: React.FC = () => {
+  const { register, handleSubmit, formState } = useForm<FormData>({
+    resolver: zodResolver(schema),
   });
+  const [status, setStatus] = useState<string | null>(null);
 
-  const onSubmit: SubmitHandler<UpdateProfileFormData> = async (data) => {
-    setFormStatus('submitting');
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
     try {
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-
-      await fetch('/api/profile', {
+      const response = await fetch('/api/users/edit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...data, password: hashedPassword }),
+        body: JSON.stringify(data),
       });
 
-      setFormStatus('success');
+      if (response.ok) {
+        setStatus("Profile updated successfully!");
+      } else {
+        setStatus("Error updating profile.");
+      }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      setFormStatus('error');
+      setStatus("Error updating profile.");
     }
   };
 
   return (
-    <div className="container mx-auto max-w-md py-12">
-      <h1 className="text-2xl font-bold">Edit Profile</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label>Username</label>
-          <input {...register('username')} className="block w-full" />
-          {errors.username && <p className="text-red-600">{errors.username.message}</p>}
-        </div>
-        <div>
-          <label>Email</label>
-          <input {...register('email')} type="email" className="block w-full" />
-          {errors.email && <p className="text-red-600">{errors.email.message}</p>}
-        </div>
-        <div>
-          <label>Bio</label>
-          <input {...register('bio')} className="block w-full" />
-        </div>
-        <div>
-          <label>Password</label>
-          <input {...register('password')} type="password" className="block w-full" />
-          {errors.password && <p className="text-red-600">{errors.password.message}</p>}
-        </div>
-        <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded">
-          {formStatus === 'submitting' ? 'Saving...' : 'Save Changes'}
-        </button>
-        {formStatus === 'success' && (
-          <p className="text-sm text-green-600">Profile updated successfully!</p>
-        )}
-        {formStatus === 'error' && (
-          <p className="text-sm text-red-600">Error updating profile.</p>
-        )}
+    <div>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <input {...register('username')} placeholder="Username" />
+        <input {...register('email')} placeholder="Email" />
+        <input {...register('password')} type="password" placeholder="Password" />
+        <textarea {...register('bio')} placeholder="Bio" />
+        <button type="submit">Update Profile</button>
+        {formState.isSubmitting && <p>Submitting...</p>}
+        {status && <p>{status}</p>}
       </form>
     </div>
   );
-}
+};
+
+export default ProfileEdit;
