@@ -1,5 +1,3 @@
-'use client'; // Add this line to mark the component as a client component
-
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,12 +5,11 @@ import { useState } from 'react';
 
 const tweetSchema = z.object({
   tweet: z.string().min(1, "Tweet cannot be empty"),
-  userId: z.number(), // Make sure this field is included
 });
 
 type TweetFormData = z.infer<typeof tweetSchema>;
 
-export default function AddTweet({ userId }: { userId: number }) { // Accept userId as prop
+export default function AddTweetPage() {
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const { register, handleSubmit, formState: { errors } } = useForm<TweetFormData>({
     resolver: zodResolver(tweetSchema),
@@ -26,7 +23,7 @@ export default function AddTweet({ userId }: { userId: number }) { // Accept use
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...data, userId }), // Include userId in request body
+        body: JSON.stringify(data),
       });
 
       setFormStatus('success');
@@ -37,11 +34,12 @@ export default function AddTweet({ userId }: { userId: number }) { // Accept use
   };
 
   return (
-    <div className="mb-6">
-      <h2 className="text-xl font-semibold mb-2">Add a Tweet</h2>
+    <div className="container mx-auto max-w-md py-12">
+      <h1 className="text-2xl font-bold">Add a Tweet</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <textarea {...register('tweet')} className="block w-full border border-gray-300 rounded-lg p-2" rows={4} />
+          <label>Tweet</label>
+          <textarea {...register('tweet')} className="block w-full" />
           {errors.tweet && <p className="text-red-600">{errors.tweet.message}</p>}
         </div>
         <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded">

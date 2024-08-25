@@ -3,38 +3,33 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite" // or "postgresql" if you're using PostgreSQL
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
-  email     String   @unique
   password  String
+  email     String   @unique
   bio       String?
-  tweets    Tweet[]  // Relation to Tweet model
-  likes     Like[]   // Add this line to create the relation with Like model
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  tweets    Tweet[]
 }
-
 
 model Tweet {
   id        Int      @id @default(autoincrement())
   tweet     String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  likes     Like[]   // Add this line to create the relation with Like model
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Like {
   id        Int      @id @default(autoincrement())
-  tweet     Tweet    @relation(fields: [tweetId], references: [id])
+  createdAt DateTime @default(now())
+  userId    Int
   tweetId   Int
   user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  createdAt DateTime @default(now())
+  tweet     Tweet    @relation(fields: [tweetId], references: [id])
 }
